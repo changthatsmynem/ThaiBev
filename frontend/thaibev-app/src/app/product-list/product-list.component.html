@@ -1,0 +1,59 @@
+<div class="max-w-[900px] mx-auto font-sans">
+    <!-- Header -->
+    <div class="bg-green-600 p-2 text-white text-center">
+        IT 06-1
+    </div>
+
+    <!-- Input Row -->
+    <div class="my-5 flex gap-3 items-center">
+        <label for="productCode">รหัสสินค้า</label>
+        <input id="productCode" type="text" [(ngModel)]="newCode" (input)="formatInput($event)"
+            placeholder="XXXX-XXXX-XXXX-XXXX" class="flex-1 p-2 border rounded" maxlength="19" />
+        <button (click)="addProduct()" class="bg-blue-600 text-white border-none px-4 py-2 rounded hover:bg-blue-700">
+            ADD
+        </button>
+    </div>
+
+    <!-- Table -->
+    <table class="w-full border-collapse border border-gray-300">
+        <thead>
+            <tr class="bg-sky-500 text-white">
+                <th class="border border-gray-300 p-2">Id</th>
+                <th class="border border-gray-300 p-2">รหัสสินค้า (16 หลัก)</th>
+                <th class="border border-gray-300 p-2">บาร์โค้ดสินค้า</th>
+                <th class="border border-gray-300 p-2">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of products; let i = index" class="text-center">
+                <td class="border border-gray-300 p-2">{{ i + 1 }}</td>
+                <td class="border border-gray-300 p-2">{{ p.code }}</td>
+                <td class="border border-gray-300 p-2">{{ p.code }}</td>
+                <td class="border border-gray-300 p-2">
+                    <button (click)="removeProduct(i)" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+                        ลบ
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Modal -->
+    <div *ngIf="showModal" class="fixed inset-0 bg-grey bg-opacity-50 z-50">
+        <div class="fixed top-32 left-1/2 transform -translate-x-1/2">
+            <div class="bg-white p-4 rounded-lg shadow-lg border border-black-300 max-w-sm">
+                <p class="mb-4 text-red-600">{{ modalMessage }}</p>
+                <div class="flex justify-end gap-3">
+                    <button (click)="closeModal()"
+                        class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                        ตกลง
+                    </button>
+                    <button (click)="closeModal()"
+                        class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
+                        ยกเลิก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

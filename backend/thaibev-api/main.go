@@ -1,13 +1,20 @@
 package main
 
 import (
-	"net/http"
+	"log"
+	"thaibev-api/database"
+	"thaibev-api/routes"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Initialize database
+	if err := database.InitDB(); err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
 	r := gin.Default()
 
 	// CORS middleware
@@ -18,23 +25,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "ThaiBev API is running",
-		})
-	})
-
-	// API routes
-	api := r.Group("/api/v1")
-	{
-		api.GET("/ping", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "pong",
-			})
-		})
-	}
+	// Setup routes
+	routes.SetupRoutes(r)
 
 	r.Run(":8080")
 }
