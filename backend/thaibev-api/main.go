@@ -3,7 +3,10 @@ package main
 import (
 	"log"
 	"thaibev-api/database"
+	"thaibev-api/handlers"
+	"thaibev-api/repository"
 	"thaibev-api/routes"
+	"thaibev-api/services"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -14,6 +17,10 @@ func main() {
 	if err := database.InitDB(); err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
+
+	productRepo := repository.NewProductRepository(database.DB)
+	productService := services.NewProductService(productRepo)
+	productHandler := handlers.NewProductHandler(productService)
 
 	r := gin.Default()
 
@@ -26,7 +33,7 @@ func main() {
 	}))
 
 	// Setup routes
-	routes.SetupRoutes(r)
+	routes.SetupRoutes(r, productHandler)
 
 	r.Run(":8080")
 }

@@ -1,7 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Product, ApiResponse } from '../models/product.model';
+import { maybe } from '../utils/maybe';
 
 @Component({
   selector: 'app-product-list',
@@ -10,19 +12,28 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.css',
 })
-export class ProductListComponent {
+export class ProductListComponent implements OnInit {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api/v1';
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly apiUrl = 'http://localhost:8080/api/products';
 
   newCode = '';
-  products: { code: string }[] = [];
+  products: Product[] = [];
   showModal = false;
   modalMessage = '';
+  selectedProduct: Product | null = null;
+  isDuplicate = false;
+  errorMessage = '';
+
+  ngOnInit() {
+    this.getProduct();
+  }
 
   getProduct() {
-    this.http.get<{ code: string }[]>(`${this.apiUrl}/data`).subscribe({
-      next: (data) => {
-        this.products = data;
+    this.http.get<ApiResponse<Product[]>>(`${this.apiUrl}`).subscribe({
+      next: (response) => {
+        this.products = maybe(response?.data).getOrElse([]);
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error fetching products:', err);
@@ -31,20 +42,25 @@ export class ProductListComponent {
   }
 
   addProduct() {
-    if (!this.newCode?.trim()) {
-      return;
-    }
+    const code = this.newCode?.trim() || '';
+    this.isDuplicate = false;
+    this.errorMessage = '';
 
-    if (this.newCode.length === 19) {
-      const productData = { code: this.newCode };
-
-      this.http.post(`${this.apiUrl}/data`, productData).subscribe({
+    if (code.length >= 16) {
+      this.http.post<any>(`${this.apiUrl}`, { code }).subscribe({
         next: () => {
-          this.products.push(productData);
           this.newCode = '';
+          this.getProduct();
         },
         error: (err) => {
-          console.error('Error adding product:', err);
+          if (err.error?.status?.includes('error')) {
+            this.isDuplicate = true;
+            this.errorMessage = 'รหัสสินค้านี้มีอยู่แล้ว';
+            this.cdr.markForCheck();
+            this.cdr.detectChanges();
+          } else {
+            console.error('Error creating product:', err);
+          }
         }
       });
     }
@@ -57,26 +73,37 @@ export class ProductListComponent {
     const formatted = value.replace(/(\w{4})(?=\w)/g, '$1-');
     this.newCode = formatted;
     event.target.value = formatted;
+
+    this.isDuplicate = false;
+    this.errorMessage = '';
+  }
+
+  openModal(product: Product) {
+    this.selectedProduct = product;
+    this.showModal = true;
+    this.modalMessage = `ต้องการลบข้อมูล รหัสสินค้า ${product.code} หรือไม่?`;
   }
 
   closeModal() {
     this.showModal = false;
+    this.selectedProduct = null;
   }
 
-  removeProduct(index: number) {
-    if (index < 0 || index >= this.products.length) {
-      console.error('Invalid index for product removal');
-      return;
+  confirmDelete() {
+    if (this.selectedProduct) {
+      this.removeProduct(this.selectedProduct.id);
     }
-    this.http.delete(`${this.apiUrl}/data/${index}`).subscribe({
+  }
+
+  removeProduct(id: number) {
+    this.http.delete(`${this.apiUrl}/${id}`).subscribe({
       next: () => {
-        this.products.splice(index, 1);
+        this.showModal = false;
+        this.getProduct();
       },
       error: (err) => {
         console.error('Error removing product:', err);
       }
     });
-    this.modalMessage = 'ต้องการลบข้อมูลรหัสสินค้า ' + this.products[index].code + ' หรือไม่?';
-    this.showModal = true;
   }
 }

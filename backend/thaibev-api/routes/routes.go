@@ -6,15 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine) {
-	// Health check
-	r.GET("/health", handlers.HealthCheck)
-
-	// API routes
-	api := r.Group("/api/v1")
+func SetupRoutes(r *gin.Engine, productHandler *handlers.ProductHandler) {
+	api := r.Group("/api/products")
 	{
-		api.GET("/ping", handlers.Ping)
-		api.POST("/data", handlers.CreateData)
-		api.DELETE("/data/:id", handlers.DeleteData)
+		api.POST("", productHandler.CreateProduct)
+		api.GET("", productHandler.GetAllProducts)
+		api.DELETE(":id", productHandler.DeleteProduct)
 	}
 }

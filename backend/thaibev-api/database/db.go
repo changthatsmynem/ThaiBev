@@ -3,7 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -17,22 +19,6 @@ func InitDB() error {
 	password := os.Getenv("DB_PASSWORD")
 	dbname := os.Getenv("DB_NAME")
 
-	if host == "" {
-		host = "localhost"
-	}
-	if port == "" {
-		port = "5432"
-	}
-	if user == "" {
-		user = "admin"
-	}
-	if password == "" {
-		password = "admin123"
-	}
-	if dbname == "" {
-		dbname = "thaibev"
-	}
-
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
@@ -42,5 +28,32 @@ func InitDB() error {
 		return err
 	}
 
-	return DB.Ping()
+	// Retry connection
+	for i := 0; i < 10; i++ {
+		err = DB.Ping()
+		if err == nil {
+			log.Printf("Database connected successfully after %d attempts", i+1)
+			return createTableIfNotExists()
+		}
+		log.Printf("Database connection attempt %d failed: %v", i+1, err)
+		time.Sleep(time.Duration(i+1) * time.Second)
+	}
+
+	return fmt.Errorf("failed to connect to database after 10 attempts: %w", err)
+}
+
+func createTableIfNotExists() error {
+	query := `CREATE TABLE IF NOT EXISTS products (
+		id SERIAL PRIMARY KEY,
+		code VARCHAR(255) NOT NULL UNIQUE,
+		barcode TEXT NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	_, err := DB.Exec(query)
+	if err != nil {
+		log.Printf("Error creating products table: %v", err)
+		return err
+	}
+	return nil
 }

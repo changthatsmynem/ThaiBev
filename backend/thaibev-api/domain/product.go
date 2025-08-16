@@ -1,16 +1,6 @@
-package models
+package domain
 
 import "time"
-
-type Response struct {
-	Status  string      `json:"status"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
 
 type ProductModel struct {
 	ID        int       `json:"id" db:"id"`
@@ -25,5 +15,5 @@ type ProductRequest struct {
 
 type BarcodeResponse struct {
 	Barcode string `json:"barcode"`
-	Image   string `json:"image"` // base64 encoded barcode image
+	Image   string `json:"image"`
 }
